@@ -6,7 +6,7 @@ import { z } from 'zod';
 export type ActionResult = { error?: string; success?: string; id?: string };
 const emailSchema=z.email().max(254); const passwordSchema=z.string().min(10).max(128);
 // Use the stable production alias, not a deployment-specific URL or localhost.
-const authOrigin = process.env.VERCEL_ENV ? 'https://skillbridge-pirate-apollo.vercel.app' : (process.env.APP_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
+const authOrigin = (process.env.APP_ORIGIN || (process.env.VERCEL_ENV ? 'https://skillbridge-pirate-apollo.vercel.app' : 'http://localhost:3000')).replace(/\/$/, '');
 export async function authAction(kind:string, data:Record<string,string>):Promise<ActionResult>{
  const db=await createClient();
  if(kind==='logout'){await db.auth.signOut();revalidatePath('/','layout');return {success:'Signed out'};}
