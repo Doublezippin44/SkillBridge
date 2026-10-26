@@ -29,3 +29,8 @@ This is a functional prototype, not completion of the entire original production
 46 actual Vitest tests passed: pure domain rules, PostgreSQL schema/RLS, and transactional workflows. TypeScript checks and the production Next.js build passed. Hosted Supabase security advisor returned zero findings after core workflow migration. The browser download failed in this environment; browser tests must not be represented as passing.
 
 The hosted public API responds successfully for taxonomy and joined listing discovery. A signup probe using an example.com test email was rejected by Supabase as an invalid address; it does not establish real email deliverability.
+
+## Deployment attempt
+Vercel project `prj_rWkhLh7gtmmTSHM8mb9T3ACsmpYN` was created with the public Supabase variables. Deployment `dpl_BxsHpW4CxZYnkxp8G8nsFPiJ5rLV` for commit `ac116e0b043d13a91a046055ec4174d80a05526a` was accepted and last reported QUEUED. Its public alias returned DEPLOYMENT_NOT_FOUND during browser verification. Vercel subsequently denied deployment/log inspection with 403, requiring team authorization for `pirate-apollo`. Live deployment is therefore **not verified**. Do not advertise this as the final product.
+
+Hosted migration filenames were aligned with the actual Supabase migration versions to avoid applying the same schema twice via the CLI. The final hosted security advisor check after both feature migrations returned zero findings.
