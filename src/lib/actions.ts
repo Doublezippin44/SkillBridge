@@ -18,13 +18,17 @@ export async function authAction(kind:string, data:Record<string,string>):Promis
  catch {result=await db.auth.verifyOtp({email:data.email,token:data.token,type:kind==='recover'?'recovery':'signup'});}
  return result.error?{error:'The code or link is invalid or expired.'}:{success:'Verified'};
  }
- if(kind==='resend'){const {error}=await db.auth.resend({type:'signup',email:data.email,options:{emailRedirectTo:`${authOrigin}/login`}});return error?{error:error.status===429?'Too many emails requested. Wait before retrying.':'Could not send confirmation email. Check email delivery configuration.'}:{success:'If this account needs confirmation, a new verification email has been requested. Check inbox and spam.'};}
- if(kind==='forgot'){const {error}=await db.auth.resetPasswordForEmail(data.email,{redirectTo:`${authOrigin}/auth/callback?next=reset-password`});return error?{error:'Recovery email could not be sent. Try again later.'}:{success:'If your account exists, check your email for a recovery code.'};}
+ if(kind==='resend'){const {error}=await db.auth.resend({type:'signup',email:data.email,options:{emailRedirectTo:`${authOrigin}/login`}});return error?{error:error.status===429?'SkillBridge has reached its email sending limit. The site owner must configure an SMTP email provider. Please do not repeatedly request confirmation emails.':'Could not send confirmation email. Check email delivery configuration.'}:{success:'If this account needs confirmation, a new verification email has been requested. Check inbox and spam.'};}
+ if(kind==='forgot'){const {error}=await db.auth.resetPasswordForEmail(data.email,{redirectTo:`${authOrigin}/auth/callback?next=reset-password`});return error?{error:error.status===429?'SkillBridge has reached its email sending limit. Password reset email delivery requires SMTP configuration.':'Recovery email could not be sent. Try again later.'}:{success:'If your account exists, check your email for a recovery code.'};}
  if(!passwordSchema.safeParse(data.password).success)return {error:'Use a password of 10–128 characters.'};
  if(kind==='register'){
  if(data.password!==data.confirm||data.terms!=='true'||!data.full_name?.trim())return {error:'Confirm your password, enter your name, and accept the terms.'};
  const {data:result,error}=await db.auth.signUp({email:data.email,password:data.password,options:{emailRedirectTo:`${authOrigin}/login`,data:{full_name:data.full_name.trim().slice(0,100)}}});
- if(error)return {error:'Registration could not be completed. Check your email address or try again later.'};
+ if(error){
+  if(error.status===429 || error.code==='over_email_send_rate_limit')return {error:'SkillBridge has reached its email sending limit. No confirmation email was sent. The site owner must configure an SMTP email provider before additional accounts can be verified.'};
+  if(error.code==='email_address_not_authorized')return {error:'SkillBridge cannot send verification mail to this address with the current Supabase email settings. Contact the site owner.'};
+  return {error:'Registration could not be completed. Please check your email address or try again later.'};
+ }
  return {success:result.session?'Signed in':'If this is a new account, check your email for confirmation. Already registered? Sign in instead.'};
  }
  const {error}=await db.auth.signInWithPassword({email:data.email,password:data.password});
