@@ -16,11 +16,12 @@ export async function authAction(kind:string, data:Record<string,string>):Promis
  catch {result=await db.auth.verifyOtp({email:data.email,token:data.token,type:kind==='recover'?'recovery':'signup'});}
  return result.error?{error:'The code or link is invalid or expired.'}:{success:'Verified'};
  }
- if(kind==='forgot'){await db.auth.resetPasswordForEmail(data.email);return {success:'If your account exists, check your email for a recovery code.'};}
+ if(kind==='resend'){const {error}=await db.auth.resend({type:'signup',email:data.email,options:{emailRedirectTo:'https://skillbridge-n55pb9y5s-pirate-apollo.vercel.app/auth/callback'}});return error?{error:error.status===429?'Too many emails requested. Wait before retrying.':'Could not send confirmation email. Check email delivery configuration.'}:{success:'If this account needs confirmation, a new verification email has been requested. Check inbox and spam.'};}
+ if(kind==='forgot'){const {error}=await db.auth.resetPasswordForEmail(data.email,{redirectTo:'https://skillbridge-n55pb9y5s-pirate-apollo.vercel.app/auth/callback'});return error?{error:'Recovery email could not be sent. Try again later.'}:{success:'If your account exists, check your email for a recovery code.'};}
  if(!passwordSchema.safeParse(data.password).success)return {error:'Use a password of 10–128 characters.'};
  if(kind==='register'){
  if(data.password!==data.confirm||data.terms!=='true'||!data.full_name?.trim())return {error:'Confirm your password, enter your name, and accept the terms.'};
- const {data:result,error}=await db.auth.signUp({email:data.email,password:data.password,options:{data:{full_name:data.full_name.trim().slice(0,100)}}});
+ const {data:result,error}=await db.auth.signUp({email:data.email,password:data.password,options:{emailRedirectTo:'https://skillbridge-n55pb9y5s-pirate-apollo.vercel.app/auth/callback',data:{full_name:data.full_name.trim().slice(0,100)}}});
  if(error)return {error:'Registration could not be completed. Check your email address or try again later.'};
  return {success:result.session?'Signed in':'Check your email to confirm your account.'};
  }
