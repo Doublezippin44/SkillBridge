@@ -16,7 +16,7 @@ This is a functional prototype, not completion of the entire original production
 - Admin-only user suspension/reactivation, listing moderation, report decisions, ledger inspection, completion rate; audit logs.
 
 ## Incomplete requirements / release limitations
-- Production email/redirect configuration and real-mailbox signup/reset E2E verification.
+- SMTP delivery for arbitrary non-team email addresses, final Auth dashboard URL allowlist, and full real-browser signup/reset E2E verification. One real confirmation email was observed; deliverability to other users is not established.
 - Optional Google OAuth, Resend, Razorpay and authenticated Jitsi adapters are not implemented/configured. These are disabled, not fake-success controls. Users coordinate external private meetings through messages.
 - Avatar Storage uploads, stepped onboarding navigation/preferences, notification preferences, unread badges/read receipts/search/message pagination, reminder jobs.
 - Rating/relevance sorting; rating distributions; cross-time-zone overlap scoring; large-scale candidate/filter optimization.
@@ -34,3 +34,12 @@ The hosted public API responds successfully for taxonomy and joined listing disc
 Vercel project `prj_rWkhLh7gtmmTSHM8mb9T3ACsmpYN` was created with the public Supabase variables. Deployment `dpl_BxsHpW4CxZYnkxp8G8nsFPiJ5rLV` for commit `ac116e0b043d13a91a046055ec4174d80a05526a` was accepted and last reported QUEUED. Its public alias returned DEPLOYMENT_NOT_FOUND during browser verification. Vercel subsequently denied deployment/log inspection with 403, requiring team authorization for `pirate-apollo`. Live deployment is therefore **not verified**. Do not advertise this as the final product.
 
 Hosted migration filenames were aligned with the actual Supabase migration versions to avoid applying the same schema twice via the CLI. The final hosted security advisor check after both feature migrations returned zero findings.
+
+## October 26, 2026: deployed prototype and authentication corrections
+Vercel production has a READY deployment on the stable alias https://skillbridge-pirate-apollo.vercel.app. This is confirmation of a successful build and alias assignment, **not** evidence that every browser user journey passed.
+
+An existing registration in Supabase Auth was observed to be email-confirmed and active. Repeating signup for a confirmed account will not generate another confirmation email. The original confirmation link had redirected to localhost and subsequent clicks produced an expired-token error; the account nevertheless became confirmed.
+
+Repository changes added an explicit resend action, changed signup/recovery redirects to the stable production alias, fixed recovery callback routing to the password-reset form, and displayed recovery errors. The homepage now renders dynamically so CI need not read Supabase credentials at static build time. Earlier GitHub CI runs had 46 passing tests and TypeScript checks, but failed at page prerender with missing CI environment variables; the corrected code compiled and built on Vercel. A successful GitHub Actions rerun has not been independently established.
+
+**Remaining launch gate:** the operator must securely configure SMTP and verify the Supabase Auth Site URL / redirect allowlist. The connected project tools did not provide Auth SMTP/template/URL configuration writes. This cannot be completed just by editing application source. The email-confirmation flow for new non-team addresses is still not verified, and payment/video optional features remain disabled.
