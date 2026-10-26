@@ -1,0 +1,8 @@
+'use client';
+import {useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {availableSlots,command} from '@/lib/actions';
+export function BookingForm({listingId,obligationId}:{listingId:string;obligationId?:string}){
+ const [slots,setSlots]=useState<{starts_at:string;ends_at:string}[]>([]);const [date,setDate]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const router=useRouter();
+ return <div><form className="form" onSubmit={async e=>{e.preventDefault();setBusy(true);const r=await availableSlots(listingId,date);setSlots(r.slots);setMessage(r.error??(r.slots.length?'':'No open slots on this UTC date. Try another day.'));setBusy(false);}}><label>Choose a date (UTC)<input type="date" required value={date} onChange={e=>{setDate(e.target.value);setSlots([])}} min={new Date().toISOString().slice(0,10)}/></label><button disabled={busy}>{busy?'Loading…':'Find available times'}</button></form><p><small>Session times below use your device’s time zone. Final availability is checked again when you book.</small></p>{message&&<p role="status" className="alert">{message}</p>}<div className="row">{slots.map(s=><button key={s.starts_at} className="secondary" disabled={busy} onClick={async()=>{setBusy(true);const r=await command('book',{listing_id:listingId,obligation_id:obligationId??'',starts_at:s.starts_at});setBusy(false);if(r.error)setMessage(r.error);else router.push('/bookings/'+r.id);}}>{new Date(s.starts_at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZoneName:'short'})}</button>)}</div></div>;
+}

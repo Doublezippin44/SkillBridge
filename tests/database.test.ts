@@ -19,7 +19,7 @@ beforeAll(async()=>{
  grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;`);
  for(const file of readdirSync('supabase/migrations').filter(f=>f.endsWith('.sql')).sort()) await db.exec(readFileSync(`supabase/migrations/${file}`,'utf8'));
  await db.exec(`insert into auth.users(id,raw_user_meta_data) values('${a}','{"full_name":"Alice","role":"admin"}'),('${b}','{"full_name":"Bob"}'),('${c}','{"full_name":"Carol"}');
- insert into skill_categories(id,name,slug) values('50000000-0000-4000-8000-000000000001','Programming','programming');
+ insert into skill_categories(id,name,slug) values('50000000-0000-4000-8000-000000000001','Test Programming','test-programming');
  insert into skills(id,category_id,name) values('60000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','Python');
  insert into user_skills(id,user_id,skill_id,level) values('70000000-0000-4000-8000-000000000001','${a}','60000000-0000-4000-8000-000000000001','advanced');
  insert into skill_listings(id,owner_id,user_skill_id,title,description,format,duration_minutes,languages,modes,status)
