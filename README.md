@@ -22,6 +22,32 @@ For a small demonstration, an eligible Gmail account can be used as the Supabase
 
 A verified domain with a dedicated transactional SMTP provider is recommended before inviting the public. SMTP credentials and authentication URL configuration are managed in the Supabase dashboard, **not** in this repository.
 
+## Permanent, public signup email delivery (recommended)
+The built-in Supabase Auth email service is **not** suitable for public signup. The durable setup is a domain under your control plus a verified transactional sender such as [Resend](https://resend.com/supabase). **A domain registered only for sending email is sufficient:** the app can continue using its Vercel URL, so moving the entire website to a new domain is optional.
+
+1. Register and retain ownership of a domain through a registrar. Do not use `vercel.app` for sender verification because DNS for that shared parent domain is not under your control.
+2. Create a Resend account and add the sending domain (or a dedicated sending subdomain). Publish the exact SPF, DKIM, and any required return-path/MX records shown in **Resend → Domains**, and add a suitable DMARC policy. Verify the domain in Resend before sending.
+3. Connect [Resend to Supabase Auth](https://supabase.com/partners/resend) (guided integration) or enter the SMTP credentials privately in [Supabase Auth SMTP](https://supabase.com/dashboard/project/jbyqlnvekqeuqwhuctga/auth/smtp):
+   - Host `smtp.resend.com`
+   - Port `465`
+   - Username `resend`
+   - Password **a Resend API key** (never commit it)
+   - Sender: `SkillBridge <no-reply@YOUR_VERIFIED_DOMAIN>`
+4. In [Supabase Auth URL configuration](https://supabase.com/dashboard/project/jbyqlnvekqeuqwhuctga/auth/url-configuration), set Site URL to `https://skillbridge-pirate-apollo.vercel.app` while using the Vercel alias. Allow `https://skillbridge-pirate-apollo.vercel.app/**`. If you attach a custom website domain later, update this and set `APP_ORIGIN` in Vercel's **server-side** environment variables.
+5. Keep **email confirmation required**. Change the **Confirm signup** email template's button to:
+   ```html
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">Confirm SkillBridge account</a>
+   ```
+   Change the **Reset password** email template button to:
+   ```html
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery">Reset SkillBridge password</a>
+   ```
+   The `/auth/confirm` page was designed to **show a confirmation button on GET** and only verify the token on POST. This avoids consuming a one-time token just because an email security scanner opens its URL.
+6. In [Supabase Auth Rate Limits](https://supabase.com/dashboard/project/jbyqlnvekqeuqwhuctga/auth/rate-limits), set an appropriate limit within your verified SMTP provider's actual quota. Custom SMTP initially has a separate Supabase sending rate cap; do not indiscriminately raise it without CAPTCHA / bot safeguards.
+7. With test inboxes **not** already registered, verify signup → message received → click email → **Confirm** → dashboard → sign-out → password login. Also test recovery, expired links, resending for an unconfirmed account, and spam folder. Monitor Supabase Auth and Resend delivery logs.
+
+The domain is a recurring registrar cost. Resend may have a free email tier, subject to its current quotas. Neither a personal Gmail account nor waiting out Supabase's default email rate limit is a robust public-registration solution. Domain registration, DNS, SMTP credentials, email templates and Site URL require access to the respective provider consoles and are **not** completed by this repository code alone.
+
 ## Run locally
 Prerequisites: Node 24, npm, a Supabase project.
 
@@ -35,7 +61,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in `.e
 Apply all SQL files in `supabase/migrations` in order to a fresh Supabase project. For CLI use, run `npx supabase --help`, link the intended project, inspect migration status, then push migrations. Do not apply existing migrations twice to the hosted SkillBridge database.
 
 ## Authentication setup
-In Supabase Authentication → URL Configuration, set the deployed site URL and allow `/auth/callback`. Enable email/password and email confirmation. Configure an SMTP provider for delivery to people outside the project team. Supabase default email has delivery restrictions and rate limits.
+In Supabase Authentication → URL Configuration, set the deployed site URL and allow `/auth/callback` and `/auth/confirm`. Enable email/password and email confirmation. Configure an SMTP provider for delivery to people outside the project team. Supabase default email has delivery restrictions and rate limits.
 
 Use email templates containing `{{ .Token }}` for code entry, or copy the confirmation/recovery link into the application's verification field. Link verification validates the exact Supabase origin. For conventional email-link flow, configure the template and exact redirect URL; `/auth/callback` exchanges PKCE codes. Never disable verification simply to make a demonstration pass.
 
